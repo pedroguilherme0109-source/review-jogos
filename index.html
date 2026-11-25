@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review de Jogos</title>
+    <link rel="icon" type="image/jpeg" href="img/logo.jpg">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js" defer></script>
+    <script src="app.js" defer></script>
+</head>
+<body class="fundo-aurora">
+    <div id="app">
+        <header class="cabecalho">
+            <img class="logo-site" src="img/logo.jpg" alt="Logo do Review de Jogos">
+            <h1>Review de Jogos</h1>
+        </header>
+
+        <main class="catalogo">
+            <section class="filtros" aria-label="Busca e filtros do catálogo">
+                <label class="sr-only" for="busca">Buscar jogo pelo nome</label>
+                <input id="busca" v-model="busca" type="search" placeholder="Buscar jogo pelo nome">
+
+                <label class="sr-only" for="genero">Filtrar por gênero</label>
+                <select id="genero" v-model="generoSelecionado">
+                    <option value="">Todos os gêneros</option>
+                    <option v-for="genero in generos" :key="genero" :value="genero">{{ genero }}</option>
+                </select>
+
+                <label class="sr-only" for="ordem">Ordenar catálogo</label>
+                <select id="ordem" v-model="ordem">
+                    <option value="alfabetica">Ordem alfabética</option>
+                    <option value="avaliacao">Melhor avaliação</option>
+                    <option value="reviews">Mais reviews</option>
+                </select>
+            </section>
+
+            <p class="resumo-resultados" aria-live="polite">
+                {{ jogosFiltrados.length }} {{ jogosFiltrados.length === 1 ? 'jogo encontrado' : 'jogos encontrados' }}
+            </p>
+            <p v-if="mensagemErro" class="mensagem-erro" role="alert">{{ mensagemErro }}</p>
+
+            <section class="grade-jogos" aria-label="Catálogo de jogos">
+                <article class="jogo" v-for="jogo in jogosFiltrados" :key="jogo.nome">
+                    <div class="capa" :class="jogo.classeCapa"><h2>{{ jogo.nome }}</h2></div>
+                    <div class="detalhes">
+                        <h3>{{ jogo.nome }}</h3>
+                        <p>{{ jogo.genero }}, {{ jogo.ano }}</p>
+                        <p class="avaliacao" :class="{ 'sem-avaliacao': jogo.reviews === 0 }">
+                            {{ totalAvaliacoes(jogo) === 0 ? 'Sem avaliações ainda' : `Nota ${notaMedia(jogo).toFixed(1)} (${totalAvaliacoes(jogo)} ${totalAvaliacoes(jogo) === 1 ? 'avaliação' : 'avaliações'})` }}
+                        </p>
+
+                        <button class="botao-avaliar" type="button" @click="abrirFormulario(jogo)">
+                            {{ jogoEmAvaliacao === jogo.nome ? 'Cancelar' : 'Fazer avaliação' }}
+                        </button>
+
+                        <form v-if="jogoEmAvaliacao === jogo.nome" class="formulario-avaliacao" @submit.prevent="enviarAvaliacao(jogo)">
+                            <label :for="`nota-${jogo.classeCapa}`">Sua nota</label>
+                            <select :id="`nota-${jogo.classeCapa}`" v-model.number="novaAvaliacao.nota" required>
+                                <option disabled value="">Selecione uma nota</option>
+                                <option v-for="nota in 5" :key="nota" :value="nota">{{ nota }} {{ nota === 1 ? 'estrela' : 'estrelas' }}</option>
+                            </select>
+
+                            <label :for="`comentario-${jogo.classeCapa}`">Comentário</label>
+                            <textarea :id="`comentario-${jogo.classeCapa}`" v-model.trim="novaAvaliacao.comentario" rows="3" maxlength="500" placeholder="O que você achou do jogo?" required></textarea>
+
+                            <button type="submit">Enviar avaliação</button>
+                        </form>
+
+                        <ul v-if="avaliacoesDoJogo(jogo).length" class="lista-avaliacoes" aria-label="Avaliações enviadas">
+                            <li v-for="(avaliacao, indice) in avaliacoesDoJogo(jogo)" :key="`${jogo.nome}-${indice}`">
+                                <strong>{{ avaliacao.nota }}/5</strong> — {{ avaliacao.comentario }}
+                            </li>
+                        </ul>
+                    </div>
+                </article>
+
+                <p v-if="jogosFiltrados.length === 0" class="nenhum-resultado">
+                    Nenhum jogo encontrado. Tente mudar a busca ou o gênero.
+                </p>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
